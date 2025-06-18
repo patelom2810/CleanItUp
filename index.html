@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanItUp! - Professional Data Cleaning & Analytics Platform</title>
+    <meta name="description" content="CleanItUp! - The ultimate data cleaning playground for professionals. Clean, analyze, and visualize your CSV data with advanced tools and AI-powered insights.">
+    <meta name="keywords" content="data cleaning, CSV processing, data analysis, data visualization, CleanItUp">
+    <meta name="author" content="Om Patel">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧹</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --light: #ffffff;
+            --border: #e5e7eb;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        * {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background: var(--gradient-1);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundShift 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .glass-dark {
+            background: rgba(31, 41, 55, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--success), #059669);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--error), #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.5);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+        }
+
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .social-icon {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .social-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: 0.5s;
+        }
+
+        .social-icon:hover::before {
+            left: 100%;
+        }
+
+        .social-icon:hover {
+            transform: translateY(-3px) scale(1.1);
+        }
+
+        .feedback-form {
+            background: var(--gradient-2);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            transform: translateX(400px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, var(--error), #dc2626);
+        }
+
+        .notification.warning {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            transform: translateY(-5px);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .data-table {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            font-weight: 600;
+        }
+
+        .table-row:nth-child(even) {
+            background: rgba(99, 102, 241, 0.02);
+        }
+
+        .table-row:hover {
+            background: rgba(99, 102, 241, 0.05);
+            transform: scale(1.001);
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.6);
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+
+        .brand-logo {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+            font-size: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-highlight {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-highlight::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+            animation: rotate 4s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pulse-ring {
+            position: absolute;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2.5);
+                opacity: 0;
+            }
+        }
+
+        .typing-animation {
+            overflow: hidden;
+            border-right: 2px solid var(--primary);
+            white-space: nowrap;
+            animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: var(--primary); }
+        }
+
+        @media (max-width: 768px) {
+            .grid-responsive {
+                grid-template-columns: 1fr;
+            }
+            .floating-action {
+                bottom: 20px;
+                right: 20px;
+            }
+            .fab {
+                width: 48px;
+                height: 48px;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .glass-effect {
+                background: rgba(31, 41, 55, 0.95);
+                color: white;
+            }
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* High contrast mode */
+        @media (prefers-contrast: high) {
+            .glass-effect {
+                background: white;
+                border: 2px solid black;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Notification Container -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loader" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="glass-effect p-8 rounded-2xl text-center">
+            <div class="loader mx-auto mb-4"></div>
+            <p class="text-lg font-medium text-gray-700">Processing your data...</p>
+            <div class="progress-bar mt-4 w-64">
+                <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="glass-effect shadow-lg sticky top-0 z-40 border-b border-white border-opacity-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="pulse-ring w-12 h-12 absolute top-0 left-0"></div>
+                    </div>
+                    <div>
+                        <h1 class="brand-logo">CleanItUp!</h1>
+                        <p class="text-sm text-gray-600 font-medium">Professional Data Cleaning Platform</p>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#features" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Features</a>
+                    <a href="#analytics" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Analytics</a>
+                    <a href="#feedback" class="text-gray-700 hover:text-indigo-600 font-medium transition-colors">Feedback</a>
+                </nav>
+                
+                <!-- Social Icons -->
+                <div class="flex items-center space-x-3">
+                    <a href="https://github.com" class="social-icon p-2 rounded-full bg-gray-100 hover:bg-gray-200 tooltip" data-tooltip="GitHub">
+                        <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                    </a>
+                    <a href="https://linkedin.com" class="social-icon p-2 rounded-full bg-blue-100 hover:bg-blue-200 tooltip" data-tooltip="LinkedIn">
+                        <svg class="w-5 h-5 text-blue-700" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                        </svg>
+                    </a>
+                    <a href="https://twitter.com" class="social-icon p-2 rounded-full bg-sky-100 hover:bg-sky-200 tooltip" data-tooltip="Twitter">
+                        <svg class="w-5 h-5 text-sky-700" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="glass-effect rounded-3xl p-8 mb-8">
+                <h2 class="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
+                    Clean Your Data Like a 
+                    <span class="brand-logo">Pro</span>
+                </h2>
+                <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                    Transform messy datasets into pristine, analysis-ready data with our advanced cleaning tools and AI-powered insights.
+                </p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <div class="stats-card rounded-2xl p-6 text-white">
+                        <div class="text-2xl font-bold" id="processedFiles">0</div>
+                        <div class="text-sm opacity-90">Files Processed</div>
+                    </div>
+                    <div class="stats-card rounded-2xl p-6 text-white">
+                        <div class="text-2xl font-bold" id="cleanedRows">0</div>
+                        <div class="text-sm opacity-90">Rows Cleaned</div>
+                    </div>
+                    <div class="stats-card rounded-2xl p-6 text-white">
+                        <div class="text-2xl font-bold">99.9%</div>
+                        <div class="text-sm opacity-90">Accuracy Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <!-- File Upload Section -->
+        <section id="features" class="mb-8">
+            <div class="glass-effect rounded-2xl p-6 card-hover feature-highlight">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Smart File Upload</h2>
+                        <p class="text-gray-600">Drag, drop, and let AI do the magic</p>
+                    </div>
+                </div>
+                
+                <div class="border-2 border-dashed border-indigo-300 rounded-xl p-8 text-center hover:border-indigo-400 transition-all duration-300 bg-gradient-to-br from-indigo-50 to-purple-50" id="dropZone">
+                    <input type="file" id="csvFile" accept=".csv" class="hidden">
+                    <label for="csvFile" class="cursor-pointer block">
+                        <div class="mb-4">
+                            <svg class="mx-auto h-16 w-16 text-indigo-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="text-xl font-semibold text-gray-900 mb-2">Drop your CSV file here</p>
+                        <p class="text-gray-600 mb-4">or click to browse</p>
+                        <div class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Choose File
+                        </div>
+                    </label>
+                </div>
+                
+                <!-- File Info -->
+                <div id="fileInfo" class="mt-4 p-4 bg-blue-50 rounded-lg hidden">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span class="font-medium text-blue-900" id="fileName"></span>
+                        <span class="text-blue-600 ml-2" id="fileSize"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Operations -->
+        <section class="mb-8">
+            <div class="glass-effect rounded-2xl p-6 card-hover">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Advanced Operations</h2>
+                        <p class="text-gray-600">Professional-grade data cleaning tools</p>
+                    </div>
+                </div>
+
+                <!-- Replace Values -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Value Replacement
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <select id="columnSelect" class="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm">
+                            <option disabled selected>Select Column</option>
+                        </select>
+                        <input type="text" id="valueToReplace" placeholder="Old Value" class="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm">
+                        <input type="text" id="replaceWith" placeholder="New Value" class="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm">
+                        <button onclick="replaceValues()" class="btn-primary text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Replace
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <button onclick="downloadCleaned()" class="btn-secondary text-white px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Download Clean CSV
+                    </button>
+                    <button onclick="dropMissingRows()" class="btn-warning text-white px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Remove Missing Data
+                    </button>
+                    <button onclick="removeDuplicates()" class="btn-danger text-white px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        Remove Duplicates
+                    </button>
+                </div>
+
+                <!-- Filter and Rename -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                            Smart Filter
+                        </h3>
+                        <div class="space-y-3">
+                            <input id="filterColumn" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm" placeholder="Column Name">
+                            <input id="filterValue" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm" placeholder="Filter Value">
+                            <button onclick="applyFilter()" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">Apply Filter</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Column Rename
+                        </h3>
+                        <div class="space-y-3">
+                            <input id="renameColumnOld" placeholder="Current Name" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm">
+                            <input id="renameColumnNew" placeholder="New Name" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm">
+                            <button onclick="renameColumn()" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">Rename Column</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Preview -->
+        <section class="mb-8">
+            <div class="glass-effect rounded-2xl p-6 card-hover">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">Data Preview</h2>
+                            <p class="text-gray-600" id="tableInfo">Upload a file to see your data</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="exportToJSON()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium">
+                            Export JSON
+                        </button>
+                        <button onclick="exportToExcel()" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-medium">
+                            Export Excel
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="data-table rounded-xl overflow-hidden">
+                    <div id="tableContainer" class="overflow-auto max-h-96">
+                        <div class="flex items-center justify-center py-16 text-gray-500">
+                            <div class="text-center">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <p class="text-lg font-medium">No data to display</p>
+                                <p class="text-sm">Upload a CSV file to get started</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-center mt-4">
+                    <button id="loadMoreBtn" onclick="loadMore()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors hidden">
+                        Load More Rows
+                    </button>
+                    <div class="text-sm text-gray-500" id="rowCounter"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics" class="mb-8">
+            <div class="glass-effect rounded-2xl p-6 card-hover">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Smart Analytics</h2>
+                        <p class="text-gray-600">AI-powered insights and visualizations</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 shadow-inner">
+                    <canvas id="chart" class="w-full h-80"></canvas>
+                </div>
+                
+                <!-- Data Insights -->
+                <div id="dataInsights" class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-900 mb-2">Data Quality Score</h4>
+                        <div class="text-2xl font-bold text-blue-600" id="qualityScore">--</div>
+                        <div class="progress-bar">
+                            <div id="qualityProgress" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-green-900 mb-2">Completeness</h4>
+                        <div class="text-2xl font-bold text-green-600" id="completeness">--</div>
+                        <div class="progress-bar">
+                            <div id="completenessProgress" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-purple-900 mb-2">Unique Values</h4>
+                        <div class="text-2xl font-bold text-purple-600" id="uniqueValues">--</div>
+                        <div class="progress-bar">
+                            <div id="uniqueProgress" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feedback Section -->
+        <section id="feedback" class="mb-8">
+            <div class="feedback-form rounded-2xl p-8 text-white card-hover">
+                <div class="max-w-3xl mx-auto text-center">
+                    <div class="mb-6">
+                        <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-4">Love CleanItUp!? Share Your Experience</h2>
+                        <p class="text-lg opacity-90">Your feedback helps us make data cleaning even better for everyone</p>
+                    </div>
+                    
+                    <form id="feedbackForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <input type="text" id="feedbackName" placeholder="Your Name" required class="w-full px-6 py-4 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:bg-opacity-30 transition-all">
+                            <input type="email" id="feedbackEmail" placeholder="Your Email" required class="w-full px-6 py-4 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:bg-opacity-30 transition-all">
+                        </div>
+                        
+                        <div class="flex justify-center items-center space-x-4 mb-6">
+                            <span class="text-lg font-medium opacity-90">Rate your experience:</span>
+                            <div class="flex space-x-2" id="starRating">
+                                <button type="button" class="star text-3xl text-white opacity-50 hover:opacity-100 transition-all transform hover:scale-110" data-rating="1">⭐</button>
+                                <button type="button" class="star text-3xl text-white opacity-50 hover:opacity-100 transition-all transform hover:scale-110" data-rating="2">⭐</button>
+                                <button type="button" class="star text-3xl text-white opacity-50 hover:opacity-100 transition-all transform hover:scale-110" data-rating="3">⭐</button>
+                                <button type="button" class="star text-3xl text-white opacity-50 hover:opacity-100 transition-all transform hover:scale-110" data-rating="4">⭐</button>
+                                <button type="button" class="star text-3xl text-white opacity-50 hover:opacity-100 transition-all transform hover:scale-110" data-rating="5">⭐</button>
+                            </div>
+                        </div>
+                        
+                        <textarea id="feedbackMessage" placeholder="Tell us about your experience with CleanItUp!..." required rows="5" class="w-full px-6 py-4 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:bg-opacity-30 transition-all resize-none"></textarea>
+                        
+                        <button type="submit" class="w-full md:w-auto px-12 py-4 bg-white text-purple-600 rounded-xl font-bold text-lg hover:bg-opacity-90 transition-all transform hover:scale-105 shadow-lg">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                            Send Feedback
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Action Buttons -->
+    <div class="floating-action">
+        <button class="fab tooltip" data-tooltip="Export Data" onclick="showExportOptions()">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </button>
+        <button class="fab tooltip" data-tooltip="Data Summary" onclick="showDataSummary()">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="glass-effect mt-16 border-t border-white border-opacity-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-2">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="brand-logo text-xl">CleanItUp!</h3>
+                    </div>
+                    <p class="text-gray-600 mb-6 max-w-md">
+                        The ultimate data cleaning platform for professionals. Transform messy datasets into pristine, analysis-ready data with our advanced AI-powered tools.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://github.com" class="social-icon p-3 rounded-full bg-gray-100 hover:bg-gray-200">
+                            <svg class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                        <a href="https://linkedin.com" class="social-icon p-3 rounded-full bg-blue-100 hover:bg-blue-200">
+                            <svg class="w-5 h-5 text-blue-700" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="https://twitter.com" class="social-icon p-3 rounded-full bg-sky-100 hover:bg-sky-200">
+                            <svg class="w-5 h-5 text-sky-700" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                            </svg>
+                        </a>
+                        <a href="mailto:contact@cleanitup.com" class="social-icon p-3 rounded-full bg-purple-100 hover:bg-purple-200">
+                            <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-4">Features</h4>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">CSV Processing</a></li>
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Data Cleaning</a></li>
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Smart Analytics</a></li>
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Export Tools</a></li>
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">AI Insights</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Documentation</a></li>
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">API Reference</a></li>
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Community</a></li>
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-indigo-600 transition-colors">Bug Reports</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
+                <p class="text-gray-600 mb-4 sm:mb-0">
+                    © 2025 <span class="font-semibold text-indigo-600">CleanItUp!</span> by Om Patel. Made with ❤️ for the data community.
+                </p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-500 hover:text-indigo-600 text-sm transition-colors">Privacy Policy</a>
+                    <a href="#" class="text-gray-500 hover:text-indigo-600 text-sm transition-colors">Terms of Service</a>
+                    <a href="#" class="text-gray-500 hover:text-indigo-600 text-sm transition-colors">Support</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            // Add your Firebase config here
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
+
+        // Initialize Firebase
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            showNotification("Firebase connection failed. Some features may be limited.", "warning");
+        }
+
+        // Global variables
+        let parsedData = [], cleanedData = [], displayedRows = 0, rowsPerPage = 100;
+        let currentRating = 0;
+        let chart = null;
+        let processedFilesCount = 0;
+        let cleanedRowsCount = 0;
+
+        // Utility Functions
+        function showLoader(show) {
+            document.getElementById("loader").classList.toggle("hidden", !show);
+            if (show) {
+                animateProgress();
+            }
+        }
+
+        function animateProgress() {
+            const progressFill = document.getElementById("progressFill");
+            let width = 0;
+            const interval = setInterval(() => {
+                width += Math.random() * 15;
+                if (width >= 100) {
+                    width = 100;
+                    clearInterval(interval);
+                }
+                progressFill.style.width = width + "%";
+            }, 200);
+        }
+
+        function showNotification(message, type = "success") {
+            const notification = document.getElementById("notification");
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add("show");
+            
+            setTimeout(() => {
+                notification.classList.remove("show");
+            }, 5000);
+        }
+
+        function handleError(error, context = "Operation") {
+            console.error(`${context} error:`, error);
+            showNotification(`${context} failed. Please try again.`, "error");
+            
+            // Redirect to 404 page for critical errors
+            if (error.name === "TypeError" || error.name === "ReferenceError" || error.message.includes("Critical")) {
+                setTimeout(() => {
+                    window.location.href = "404.html";
+                }, 2000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById("processedFiles").textContent = processedFilesCount.toLocaleString();
+            document.getElementById("cleanedRows").textContent = cleanedRowsCount.toLocaleString();
+        }
+
+        // File Upload Handler with enhanced features
+        document.getElementById('csvFile').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Validate file
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showNotification("Please select a valid CSV file.", "error");
+                return;
+            }
+
+            if (file.size > 50 * 1024 * 1024) { // 50MB limit
+                showNotification("File size too large. Please select a file smaller than 50MB.", "error");
+                return;
+            }
+
+            // Show file info
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            
+            fileName.textContent = file.name;
+            fileSize.textContent = `(${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            fileInfo.classList.remove('hidden');
+
+            showLoader(true);
+            
+            try {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        if (results.errors.length > 0) {
+                            handleError(new Error("CSV parsing failed"), "File parsing");
+                            showLoader(false);
+                            return;
+                        }
+
+                        parsedData = results.data;
+                        cleanedData = [...parsedData];
+                        displayedRows = 0;
+                        processedFilesCount++;
+                        cleanedRowsCount += parsedData.length;
+                        
+                        updateColumnDropdown();
+                        renderTable();
+                        renderChart();
+                        calculateDataInsights();
+                        updateStats();
+                        showLoader(false);
+                        showNotification(`Successfully loaded ${parsedData.length.toLocaleString()} rows of data!`);
+                    },
+                    error: function(error) {
+                        handleError(error, "File parsing");
+                        showLoader(false);
+                    }
+                });
+            } catch (error) {
+                handleError(error, "File processing");
+                showLoader(false);
+            }
+        });
+
+        // Enhanced Data Processing Functions
+        function updateColumnDropdown() {
+            const select = document.getElementById('columnSelect');
+            select.innerHTML = '<option disabled selected>Select Column</option>';
+            if (cleanedData.length > 0) {
+                Object.keys(cleanedData[0]).forEach(col => {
+                    const option = document.createElement('option');
+                    option.value = col;
+                    option.textContent = col;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function renderTable() {
+            try {
+                const container = document.getElementById('tableContainer');
+                const tableInfo = document.getElementById('tableInfo');
+                const rowCounter = document.getElementById('rowCounter');
+                
+                container.innerHTML = "";
+                
+                if (!cleanedData.length) {
+                    container.innerHTML = `
+                        <div class="flex items-center justify-center py-16 text-gray-500">
+                            <div class="text-center">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <p class="text-lg font-medium">No data to display</p>
+                                <p class="text-sm">Upload a CSV file to get started</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const table = document.createElement('table');
+                table.className = "min-w-full divide-y divide-gray-200";
+                
+                // Header
+                const thead = document.createElement('thead');
+                thead.className = "table-header";
+                const headerRow = document.createElement('tr');
+                Object.keys(cleanedData[0]).forEach(col => {
+                    const th = document.createElement('th');
+                    th.textContent = col;
+                    th.className = "px-6 py-4 text-left text-sm font-semibold text-white uppercase tracking-wider";
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // Body
+                const tbody = document.createElement('tbody');
+                tbody.className = "bg-white divide-y divide-gray-200";
+                const end = Math.min(displayedRows + rowsPerPage, cleanedData.length);
+                
+                for (let i = displayedRows; i < end; i++) {
+                    const row = cleanedData[i];
+                    const tr = document.createElement('tr');
+                    tr.className = "table-row transition-all duration-200";
+                    
+                    Object.values(row).forEach(val => {
+                        const td = document.createElement('td');
+                        td.textContent = val || '-';
+                        td.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-900";
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                }
+                
+                displayedRows = end;
+                table.appendChild(tbody);
+                container.appendChild(table);
+                
+                // Update info
+                tableInfo.textContent = `Showing ${cleanedData.length.toLocaleString()} rows with ${Object.keys(cleanedData[0]).length} columns`;
+                rowCounter.textContent = `Displaying ${displayedRows} of ${cleanedData.length} rows`;
+                
+                document.getElementById("loadMoreBtn").classList.toggle("hidden", displayedRows >= cleanedData.length);
+            } catch (error) {
+                handleError(error, "Table rendering");
+            }
+        }
+
+        function loadMore() {
+            renderTable();
+        }
+
+        function dropMissingRows() {
+            try {
+                const originalLength = cleanedData.length;
+                cleanedData = cleanedData.filter(row => 
+                    Object.values(row).every(v => v && v.toString().trim() !== "")
+                );
+                displayedRows = 0;
+                renderTable();
+                calculateDataInsights();
+                showNotification(`Removed ${(originalLength - cleanedData.length).toLocaleString()} rows with missing data.`);
+            } catch (error) {
+                handleError(error, "Drop missing rows");
+            }
+        }
+
+        function removeDuplicates() {
+            try {
+                const originalLength = cleanedData.length;
+                const seen = new Set();
+                cleanedData = cleanedData.filter(row => {
+                    const str = JSON.stringify(row);
+                    if (seen.has(str)) return false;
+                    seen.add(str);
+                    return true;
+                });
+                displayedRows = 0;
+                renderTable();
+                calculateDataInsights();
+                showNotification(`Removed ${(originalLength - cleanedData.length).toLocaleString()} duplicate rows.`);
+            } catch (error) {
+                handleError(error, "Remove duplicates");
+            }
+        }
+
+        function replaceValues() {
+            try {
+                const col = document.getElementById('columnSelect').value;
+                const oldVal = document.getElementById('valueToReplace').value;
+                const newVal = document.getElementById('replaceWith').value;
+                
+                if (!col || oldVal === '') {
+                    showNotification("Please select a column and enter a value to replace.", "error");
+                    return;
+                }
+
+                let replacedCount = 0;
+                cleanedData = cleanedData.map(row => {
+                    if (row[col] === oldVal) {
+                        row[col] = newVal;
+                        replacedCount++;
+                    }
+                    return row;
+                });
+                
+                renderTable();
+                calculateDataInsights();
+                showNotification(`Replaced ${replacedCount.toLocaleString()} occurrences of "${oldVal}" with "${newVal}".`);
+                
+                // Clear inputs
+                document.getElementById('valueToReplace').value = '';
+                document.getElementById('replaceWith').value = '';
+            } catch (error) {
+                handleError(error, "Replace values");
+            }
+        }
+
+        function applyFilter() {
+            try {
+                const column = document.getElementById('filterColumn').value;
+                const value = document.getElementById('filterValue').value;
+                
+                if (!column || !value) {
+                    showNotification("Please enter both column name and filter value.", "error");
+                    return;
+                }
+
+                cleanedData = parsedData.filter(row => 
+                    row[column] && row[column].toString().toLowerCase().includes(value.toLowerCase())
+                );
+                displayedRows = 0;
+                renderTable();
+                calculateDataInsights();
+                showNotification(`Filtered to ${cleanedData.length.toLocaleString()} rows containing "${value}" in ${column}.`);
+            } catch (error) {
+                handleError(error, "Apply filter");
+            }
+        }
+
+        function renameColumn() {
+            try {
+                const oldCol = document.getElementById('renameColumnOld').value;
+                const newCol = document.getElementById('renameColumnNew').value;
+                
+                if (!oldCol || !newCol) {
+                    showNotification("Please enter both old and new column names.", "error");
+                    return;
+                }
+
+                if (!cleanedData.length || !cleanedData[0].hasOwnProperty(oldCol)) {
+                    showNotification(`Column "${oldCol}" not found.`, "error");
+                    return;
+                }
+
+                cleanedData = cleanedData.map(row => {
+                    row[newCol] = row[oldCol];
+                    delete row[oldCol];
+                    return row;
+                });
+                
+                displayedRows = 0;
+                renderTable();
+                updateColumnDropdown();
+                showNotification(`Column "${oldCol}" renamed to "${newCol}".`);
+                
+                // Clear inputs
+                document.getElementById('renameColumnOld').value = '';
+                document.getElementById('renameColumnNew').value = '';
+            } catch (error) {
+                handleError(error, "Rename column");
+            }
+        }
+
+        function downloadCleaned() {
+            try {
+                if (!cleanedData.length) {
+                    showNotification("No data to download.", "error");
+                    return;
+                }
+
+                const csv = Papa.unparse(cleanedData);
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `cleanitup_cleaned_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                showNotification(`Downloaded ${cleanedData.length.toLocaleString()} rows successfully!`);
+            } catch (error) {
+                handleError(error, "Download CSV");
+            }
+        }
+
+        // Enhanced export functions
+        function exportToJSON() {
+            try {
+                if (!cleanedData.length) {
+                    showNotification("No data to export.", "error");
+                    return;
+                }
+
+                const json = JSON.stringify(cleanedData, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `cleanitup_data_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                showNotification("JSON export completed!");
+            } catch (error) {
+                handleError(error, "JSON export");
+            }
+        }
+
+        function exportToExcel() {
+            try {
+                if (!cleanedData.length) {
+                    showNotification("No data to export.", "error");
+                    return;
+                }
+
+                // Simple Excel-compatible CSV with UTF-8 BOM
+                const csv = '\ufeff' + Papa.unparse(cleanedData);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `cleanitup_excel_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                showNotification("Excel-compatible export completed!");
+            } catch (error) {
+                handleError(error, "Excel export");
+            }
+        }
+
+        function renderChart() {
+            try {
+                const ctx = document.getElementById('chart').getContext('2d');
+                
+                if (chart) {
+                    chart.destroy();
+                }
+                
+                if (!cleanedData.length) {
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    ctx.font = '16px Inter';
+                    ctx.fillStyle = '#9CA3AF';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Upload data to see visualization', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+
+                const firstColumn = Object.keys(cleanedData[0])[0];
+                const values = {};
+                
+                cleanedData.forEach(row => {
+                    const val = row[firstColumn] || 'Unknown';
+                    values[val] = (values[val] || 0) + 1;
+                });
+
+                const sortedEntries = Object.entries(values)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 15);
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: sortedEntries.map(([key]) => key.length > 20 ? key.substring(0, 20) + '...' : key),
+                        datasets: [{
+                            label: `Distribution of ${firstColumn}`,
+                            data: sortedEntries.map(([,value]) => value),
+                            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: `Top 15 Values in ${firstColumn}`,
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                },
+                                color: '#374151'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    color: '#6B7280'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    color: '#6B7280',
+                                    maxRotation: 45
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+            } catch (error) {
+                handleError(error, "Chart rendering");
+            }
+        }
+
+        function calculateDataInsights() {
+            try {
+                if (!cleanedData.length) {
+                    document.getElementById('dataInsights').classList.add('hidden');
+                    return;
+                }
+
+                document.getElementById('dataInsights').classList.remove('hidden');
+
+                // Calculate quality score
+                let totalCells = 0;
+                let filledCells = 0;
+                let uniqueValues = new Set();
+
+                cleanedData.forEach(row => {
+                    Object.values(row).forEach(value => {
+                        totalCells++;
+                        if (value && value.toString().trim() !== '') {
+                            filledCells++;
+                        }
+                        uniqueValues.add(value);
+                    });
+                });
+
+                const completeness = Math.round((filledCells / totalCells) * 100);
+                const qualityScore = Math.round((completeness + Math.min(uniqueValues.size / totalCells * 100, 100)) / 2);
+                const uniquePercentage = Math.round((uniqueValues.size / totalCells) * 100);
+
+                // Update UI
+                document.getElementById('qualityScore').textContent = qualityScore + '%';
+                document.getElementById('completeness').textContent = completeness + '%';
+                document.getElementById('uniqueValues').textContent = uniqueValues.size.toLocaleString();
+
+                // Animate progress bars
+                setTimeout(() => {
+                    document.getElementById('qualityProgress').style.width = qualityScore + '%';
+                    document.getElementById('completenessProgress').style.width = completeness + '%';
+                    document.getElementById('uniqueProgress').style.width = Math.min(uniquePercentage, 100) + '%';
+                }, 100);
+
+            } catch (error) {
+                handleError(error, "Data insights calculation");
+            }
+        }
+
+        // Star Rating System
+        document.querySelectorAll('.star').forEach(star => {
+            star.addEventListener('click', function() {
+                currentRating = parseInt(this.dataset.rating);
+                updateStarDisplay();
+            });
+        });
+
+        function updateStarDisplay() {
+            document.querySelectorAll('.star').forEach((star, index) => {
+                if (index < currentRating) {
+                    star.classList.remove('opacity-50');
+                    star.classList.add('opacity-100');
+                } else {
+                    star.classList.remove('opacity-100');
+                    star.classList.add('opacity-50');
+                }
+            });
+        }
+
+        // Enhanced Feedback Form Handler
+        document.getElementById('feedbackForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!db) {
+                showNotification("Feedback service is currently unavailable.", "error");
+                return;
+            }
+
+            const name = document.getElementById('feedbackName').value;
+            const email = document.getElementById('feedbackEmail').value;
+            const message = document.getElementById('feedbackMessage').value;
+
+            if (currentRating === 0) {
+                showNotification("Please provide a rating.", "error");
+                return;
+            }
+
+            try {
+                await db.collection('feedback').add({
+                    name: name,
+                    email: email,
+                    rating: currentRating,
+                    message: message,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    userAgent: navigator.userAgent,
+                    platform: 'CleanItUp!',
+                    version: '2.0'
+                });
+
+                showNotification("Thank you for your feedback! We appreciate your input.");
+                document.getElementById('feedbackForm').reset();
+                currentRating = 0;
+                updateStarDisplay();
+            } catch (error) {
+                handleError(error, "Feedback submission");
+            }
+        });
+
+        // Floating Action Button Functions
+        function showExportOptions() {
+            const options = [
+                { name: 'CSV', action: downloadCleaned },
+                { name: 'JSON', action: exportToJSON },
+                { name: 'Excel', action: exportToExcel }
+            ];
+
+            const menu = document.createElement('div');
+            menu.className = 'fixed bottom-24 right-8 bg-white rounded-lg shadow-xl p-4 z-50';
+            menu.innerHTML = `
+                <h3 class="font-semibold mb-3">Export Options</h3>
+                ${options.map(opt => `
+                    <button onclick="${opt.action.name}(); this.parentElement.remove();" 
+                            class="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded mb-1">
+                        ${opt.name}
+                    </button>
+                `).join('')}
+                <button onclick="this.parentElement.remove()" 
+                        class="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded">
+                    Cancel
+                </button>
+            `;
+            document.body.appendChild(menu);
+
+            setTimeout(() => {
+                if (menu.parentElement) menu.remove();
+            }, 5000);
+        }
+
+        function showDataSummary() {
+            if (!cleanedData.length) {
+                showNotification("No data to summarize.", "error");
+                return;
+            }
+
+            const summary = {
+                rows: cleanedData.length,
+                columns: Object.keys(cleanedData[0]).length,
+                size: `${(JSON.stringify(cleanedData).length / 1024 / 1024).toFixed(2)} MB`
+            };
+
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                    <h3 class="text-2xl font-bold mb-6 text-center">Data Summary</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between">
+                            <span class="font-medium">Total Rows:</span>
+                            <span class="text-indigo-600 font-bold">${summary.rows.toLocaleString()}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium">Columns:</span>
+                            <span class="text-indigo-600 font-bold">${summary.columns}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium">Data Size:</span>
+                            <span class="text-indigo-600 font-bold">${summary.size}</span>
+                        </div>
+                    </div>
+                    <button onclick="this.closest('.fixed').remove()" 
+                            class="w-full mt-6 bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                        Close
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Enhanced Drag and Drop functionality
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('csvFile');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-100', 'scale-105');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-100', 'scale-105');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+
+        // Initialize stats animation
+        function animateStats() {
+            const stats = [
+                { element: 'processedFiles', target: processedFilesCount },
+                { element: 'cleanedRows', target: cleanedRowsCount }
+            ];
+
+            stats.forEach(stat => {
+                const element = document.getElementById(stat.element);
+                let current = 0;
+                const increment = stat.target / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= stat.target) {
+                        current = stat.target;
+                        clearInterval(timer);
+                    }
+                    element.textContent = Math.floor(current).toLocaleString();
+                }, 50);
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            
+            // Add smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    switch(e.key) {
+                        case 'o':
+                            e.preventDefault();
+                            fileInput.click();
+                            break;
+                        case 's':
+                            e.preventDefault();
+                            if (cleanedData.length > 0) {
+                                downloadCleaned();
+                            }
+                            break;
+                    }
+                }
+            });
+
+            // Show welcome message
+            setTimeout(() => {
+                showNotification("Welcome to CleanItUp! Upload a CSV file to get started.", "success");
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
